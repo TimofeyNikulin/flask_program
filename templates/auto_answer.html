@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block head %}
+	<link href="{{ url_for('static', filename='css/style.css') }}" type="text/css" rel="stylesheet"></link>
+{% endblock %}
+
+{% block content %}
+    <h4>{{ information.title }}</h4>
+    <div class="ans">
+        <p>Фамилия: {{ information.surname }}</p>
+        <p>Имя: {{ information.name }}</p>
+        <p>Образование: {{ information.education }}</p>
+        <p>Профессия: {{ information.profession }}</p>
+        <p>Пол: {{ information.sex }}</p>
+        <p>Мотивация: {{ information.motivation }}</p>
+        <p>Готовы ли остаться на Марсе?: {{ information.ready }}</p>
+    </div>
+    
+{% endblock %}

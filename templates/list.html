@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+	{% if typeOfList == 'ol' %}
+		<ol>
+			{% for i in listProf %}
+				<li>{{ i }}</li>
+			{% endfor %}
+		</ol>
+	{% elif typeOfList == 'ul' %}
+		<ul>
+			{% for i in listProf %}
+				<li>{{ i }}</li>
+			{% endfor %}
+		</ul>		
+	{% endif %}
+{% endblock %}

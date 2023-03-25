@@ -1,49 +1,23 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
+from data import db_session, jobs_api
+from data.jobs import Jobs
+from data.users import User
+from data.departaments import Department
+from flask_login import LoginManager, login_user
+from forms.login_form import LoginForm
+from forms.add_job_form import JobForm
 
 
-app = Flask(__name__, template_folder='templates', static_folder='static')
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
-@app.route('/')
-@app.route('/index')
-def index():
-    return render_template('index.html', title='Заготовка')
-
-
-@app.route('/training/<string:prof>')
-def training(prof):
-    profs = {
-        'engineer_prof': [
-            'инженер-исследователь',
-            'пилот',
-            'строитель',
-            'иженер по терраформированию',
-            'инженер жизнеобеспечения',
-            'оператор марсохода',
-            'киберинженер',
-            'штурман',
-            'пилот дронов'
-        ],
-        'science_prof': [
-            'экзобиолог',
-            'врач',
-            'климатолог',
-            'специалист по радиационной защите',
-            'астрогеолог',
-            'гляциолог',
-            'метеоролог'
-        ]
-    }
-
-    images = {
-        "engineer_prof": 'engineer.jpg',
-        "science_prof": 'science.jpg'
-    }
-
-    if prof in profs['engineer_prof']:
-        return render_template('training.html', img=images['engineer_prof'], title='Инженерные тренажеры')
-    else:
-        return render_template('training.html', img=images['science_prof'], title='Научные симуляторы')
+@login_manager.user_loader
+def load_user(user_id):
+    db_sess = db_session.create_session()
+    return db_sess.query(User).get(user_id)
 
 
 @app.route('/list_prof/<string:typeOfList>')
@@ -67,21 +41,77 @@ def list_prof(typeOfList):
     return render_template('list.html', typeOfList=typeOfList, listProf=listProf)
 
 
-@app.route('/answer')
-@app.route('/auto_answer')
-def answer():
-    information = {
-        'title': 'И на Марсе будут яблони цвести!',
-        'surname': 'Wathy',
-        'name': 'Mark',
-        'education': 'выше среднего',
-        'profession': 'штурман марсохода',
-        'sex': 'male',
-        'motivation': 'Всегда мечтал застрять на Марсе!',
-        'ready': 'True',
-    }
-    return render_template('auto_answer.html', information=information)
+@app.route('/distribution')
+def distribution():
+    list_users = [
+        'Ридли Скотт',
+        'Энди Уир',
+        'Марк Уотни',
+        'Венката Капур',
+        'Тедди Сандерс',
+        'Шон Бин'
+    ]
+    return render_template('distribution.html', list_users=list_users)
+
+
+@app.route('/')
+def index():
+    listProf = ['инженер-исследователь',
+                'пилот',
+                'строитель',
+                'экзобиолог',
+                'врач',
+                'иженер по терраформированию',
+                'климатолог',
+                'специалист по радиационной защите',
+                'астрогеолог',
+                'гляциолог',
+                'инженер жизнеобеспечения',
+                'метеоролог',
+                'оператор марсохода',
+                'киберинженер',
+                'штурман',
+                'пилот дронов']
+    return render_template('index.html', listProf=listProf, title="Главная")
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(
+            User.email == form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            return redirect("/")
+        return render_template('login.html',
+                               message="Неправильный логин или пароль",
+                               form=form)
+    return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/add_job', methods=['GET', 'POST'])
+def add_job():
+    form = JobForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        job = Jobs(
+            team_leader=form.team_leader.data,
+            job=form.job.data,
+            work_size=form.work_size.data,
+            collaborators=form.collaborators.data,
+            is_finished=form.is_finished.data)
+        db_sess.add(job)
+    return render_template('job.html', title='Добавление работы', form=form)
+
+
+def main():
+    db_session.global_init("db/blogs.db")
+    db_sess = db_session.create_session()
+    app.register_blueprint(jobs_api.blueprint)
+    app.run()
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    main()
